@@ -8,13 +8,15 @@ fNames = {'LG0073grtA_Spectral.mat','LG0077grtA_Spectral.mat','LG0082grtE_Spectr
 %'QP0027grtA_Spectral','QP0034grtC_Spectral','QP0036grtA_Spectral','QP0042grtC_Spectral','QP0053grtA_Spectral'
 %'QP0056grtA_Spectral','QP0057grtA_Spectral'
 fNamesPV = {'LG0044grtB_Spectral','LG0060modAmodBodd_Spectral','LG0061modA_Spectral','LG0080modAmodBodd_Spectral','QP0007grtA_Spectral','QP0049modB_Spectral','QP0058modAOdd_Spectral','QP0065grtBOdd_Spectral','QP0068grtAOdd_Spectral'};
+% No spike: PV_VC+10Data
+fNamesPV2 = {'QP0068grtB_Spectral'};
 stimOrient = [];
 spikeCountAll = [];
 cellIndex = [];
 
-for fIndex = 2:2%length(fNames) %TODO
+for fIndex = 1:1%length(fNames) %TODO
     
-    fName = fNames(fIndex);
+    fName = fNamesPV(fIndex);
     load(string(fName));
     disp(fName)
     
@@ -31,7 +33,7 @@ for fIndex = 2:2%length(fNames) %TODO
             for spike = 1:length(spikes) %TODO
                 % can only look at spike after onset
                 spikeIndex = sTraceSerie.trace(traceNum).spikePeakIndexes(spike);
-                 if spikeIndex < 42000  || spikeIndex >  102000 % 2.1s-3.1s window
+                 if spikeIndex < 42000  || spikeIndex >  102000 % 2.1s-5.1s window
                     continue
                  end
                 
