@@ -14,7 +14,9 @@ stimOrient = [];
 spikeCountAll = [];
 cellIndex = [];
 
-for fIndex = 1:1%length(fNames) %TODO
+total_trace = 0;
+
+for fIndex = 1:9%length(fNames) %TODO
     
     fName = fNamesPV(fIndex);
     load(string(fName));
@@ -24,6 +26,7 @@ for fIndex = 1:1%length(fNames) %TODO
     numTraces = length(sTraceSerie.trace);
     
     for traceNum = 1:numTraces %TODO
+        total_trace = total_trace + 1;
         fprintf("TraceNum: %d\n",traceNum)
         spikes = sTraceSerie.trace(traceNum).spikePeakIndexes;
         spikeCount = 0;
@@ -52,27 +55,27 @@ end % end for each file
 
 % polar plot rate (# of spikes after stimulus onset) for each trial each
 % trace
-orient_all = sTraceSerie.global.stimStruct.StimMatrix;
-[orient_sorted, orient_order] = sort(orient_all);
-rate = spikeCountAll(orient_order);
-orient_sorted = degtorad(orient_sorted);
-polarscatter(orient_sorted, rate)
-hold
-unique_ori = [orient_sorted(1)];
-avg_rate = [];
-temp_rate = [rate(1)];
-
-for i = 2:length(orient_sorted)
-   if orient_sorted(i) ~= orient_sorted(i-1)
-       avg_rate = [avg_rate, mean(temp_rate)];
-       unique_ori = [unique_ori, orient_sorted(i)];
-       temp_rate = [];
-   end
-   temp_rate = [temp_rate, rate(i)];
-   if i == length(orient_sorted)
-       avg_rate = [avg_rate, mean(temp_rate)];
-   end
-end
-polarplot(unique_ori, avg_rate)
+% orient_all = sTraceSerie.global.stimStruct.StimMatrix;
+% [orient_sorted, orient_order] = sort(orient_all);
+% rate = spikeCountAll(orient_order);
+% orient_sorted = degtorad(orient_sorted);
+% polarscatter(orient_sorted, rate)
+% hold
+% unique_ori = [orient_sorted(1)];
+% avg_rate = [];
+% temp_rate = [rate(1)];
+% 
+% for i = 2:length(orient_sorted)
+%    if orient_sorted(i) ~= orient_sorted(i-1)
+%        avg_rate = [avg_rate, mean(temp_rate)];
+%        unique_ori = [unique_ori, orient_sorted(i)];
+%        temp_rate = [];
+%    end
+%    temp_rate = [temp_rate, rate(i)];
+%    if i == length(orient_sorted)
+%        avg_rate = [avg_rate, mean(temp_rate)];
+%    end
+% end
+% polarplot(unique_ori, avg_rate)
 % saveFileName = strcat('spikeRateAfterStimOnset/',string(fName),'.png')
 % saveas(gcf,saveFileName)

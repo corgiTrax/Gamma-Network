@@ -11,21 +11,22 @@ clear
 % Gamma wave –  (32 – 70 Hz)
 % Fast gamma – (70 to 130)
 % For gamma, Dana chose 33-58 Luc chose 30-80
-lfreq = 4; 
-hfreq = 9;
+lfreq = 30; 
+hfreq = 80;
 % search how far (index) left-right for gamma cycle min max
 oneSide = round(20000/lfreq) + 100;
 % use cellBody oscillation or LFP to extract gamma?
-dataSource = "LFP";%"cellBody";
+dataSource = "cellBody";%"cellBody";
 % phaseStart: bottom or top
 phaseStart = "bottom";
 % use zeroCrossing as start or not
-zeroCross = false;
+zeroCross = true;
 % exclude spikes that are at phases greater than this value; 
 %if 1 then it means don't exclude anything; if 0.5 then exclude the latter half
-phaseLimit = 1.0001;
+phaseLimit = 1;
 % whether to convert phase to a numeric value by taking log
-phaseLogTrans = false;
+phaseExpTrans = false;
+transConst = -3; %alpha in Ballard and Jehee's paper
 
 % look at data during stim on or off
 stimOn = true;
@@ -38,7 +39,7 @@ allSpike = true;
 spikeLimit = 20; % only works if allSpike == false
 
 % which cell
-cellID = 1;
+cellID = 4;
 
 % These trials have no spikes: 'QP0017grtA_Spectral.mat', 'LG0087grtAgrtB_Spectral.mat'
 fNamesPYR = {'LG0073grtA_Spectral.mat','LG0077grtA_Spectral.mat','LG0082grtE_Spectral.mat','LG0089grtA_Spectral.mat','QP0019grtA_Spectral.mat','QP0020grtA_Spectral','QP0044grtA_Spectral.mat','QP0054grtA_Spectral.mat','QP0061grtA_Spectral'};
@@ -51,7 +52,7 @@ stim_orient = [];
 spikeCountAll = [];
 freqs = []; % frequency at spike
 
-for fIndex = cellID:cellID%length(fNames) %TODO
+for fIndex = 1:9%length(fNames) %TODO
     
     fName = fNamesPYR(fIndex);
     load(string(fName));
@@ -134,12 +135,12 @@ for fIndex = cellID:cellID%length(fNames) %TODO
 
                 %  only use spike that are in the first quater of gamma
                 %  phase?
-                if spikeStartDiff > 0 %&& spikeStartDiff < phaseLimit
+                if spikeStartDiff >= 0 && spikeStartDiff <= phaseLimit
                     spikeMidDiff = (oneSide+1 - midP); 
                     spikeEndDiff = (oneSide+1 - endP);
                         
-                    if phaseLogTrans == true
-                        spikeStartDiff = -log(spikeStartDiff);
+                    if phaseExpTrans == true
+                        spikeStartDiff = exp(transConst * spikeStartDiff);
                         if spikeStartDiff < 0
                             spikeStartDiff = 0;
                         end
@@ -176,31 +177,31 @@ end % end for each file
 
 
 % polar plot first spike gamma delay(min-spike) and stimulus angle
-figure
-[orient_sorted, orient_order] = sort(stim_orient);
-delay = spikeStartDiffAll(orient_order);
-orient_sorted = degtorad(orient_sorted);
-polarscatter(orient_sorted, delay)
-hold
-
-unique_ori = [orient_sorted(1)];
-avg_delay = [];
-temp_delay = [delay(1)];
-
-for i = 2:length(orient_sorted)
-   if orient_sorted(i) ~= orient_sorted(i-1)
-       avg_delay = [avg_delay, mean(temp_delay)];
-       unique_ori = [unique_ori, orient_sorted(i)];
-       temp_delay = [];
-   end
-   temp_delay = [temp_delay, delay(i)];
-   if i == length(orient_sorted)
-       avg_delay = [avg_delay, mean(temp_delay)];
-   end
-end
-unique_ori = [unique_ori, degtorad(360)];
-avg_delay = [avg_delay, avg_delay(1)];
-polarplot(unique_ori, avg_delay)
+% figure
+% [orient_sorted, orient_order] = sort(stim_orient);
+% delay = spikeStartDiffAll(orient_order);
+% orient_sorted = degtorad(orient_sorted);
+% polarscatter(orient_sorted, delay)
+% hold
+% 
+% unique_ori = [orient_sorted(1)];
+% avg_delay = [];
+% temp_delay = [delay(1)];
+% 
+% for i = 2:length(orient_sorted)
+%    if orient_sorted(i) ~= orient_sorted(i-1)
+%        avg_delay = [avg_delay, mean(temp_delay)];
+%        unique_ori = [unique_ori, orient_sorted(i)];
+%        temp_delay = [];
+%    end
+%    temp_delay = [temp_delay, delay(i)];
+%    if i == length(orient_sorted)
+%        avg_delay = [avg_delay, mean(temp_delay)];
+%    end
+% end
+% unique_ori = [unique_ori, degtorad(360)];
+% avg_delay = [avg_delay, avg_delay(1)];
+% polarplot(unique_ori, avg_delay)
 
 %saveFileName = strcat('avgDelayAfterStimOnset/',string(fName),'.png')
 %saveas(gcf,saveFileName)
