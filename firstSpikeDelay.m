@@ -11,8 +11,8 @@ clear
 % Gamma wave –  (32 – 70 Hz)
 % Fast gamma – (70 to 130)
 % For gamma, Dana chose 33-58 Luc chose 30-80
-lfreq = 30; 
-hfreq = 80;
+lfreq = 35; 
+hfreq = 55;
 % search how far (index) left-right for gamma cycle min max
 oneSide = round(20000/lfreq) + 100;
 % use cellBody oscillation or LFP to extract gamma?
@@ -20,13 +20,13 @@ dataSource = "cellBody";%"cellBody";
 % phaseStart: bottom or top
 phaseStart = "bottom";
 % use zeroCrossing as start or not
-zeroCross = true;
+zeroCross = false;
 % exclude spikes that are at phases greater than this value; 
 %if 1 then it means don't exclude anything; if 0.5 then exclude the latter half
 phaseLimit = 1;
 % whether to convert phase to a numeric value by taking log
 phaseExpTrans = false;
-transConst = -3; %alpha in Ballard and Jehee's paper
+transConst = -3; %alpha in Ballard and Jehee's paper; only works if phaseExpTrans = true
 
 % look at data during stim on or off
 stimOn = true;
@@ -36,10 +36,12 @@ timeEnd = 102000; %5.1s, what Luc chose
 
 % First couple of spike or all spikes?
 allSpike = true;
-spikeLimit = 20; % only works if allSpike == false
+spikeLimit = 1; % only works if allSpike == false
+
+%TODO: matlab bandpass filter or butterworh bandpass filter?
 
 % which cell
-cellID = 4;
+cellID = 9;
 
 % These trials have no spikes: 'QP0017grtA_Spectral.mat', 'LG0087grtAgrtB_Spectral.mat'
 fNamesPYR = {'LG0073grtA_Spectral.mat','LG0077grtA_Spectral.mat','LG0082grtE_Spectral.mat','LG0089grtA_Spectral.mat','QP0019grtA_Spectral.mat','QP0020grtA_Spectral','QP0044grtA_Spectral.mat','QP0054grtA_Spectral.mat','QP0061grtA_Spectral'};
@@ -52,7 +54,9 @@ stim_orient = [];
 spikeCountAll = [];
 freqs = []; % frequency at spike
 
-for fIndex = 1:9%length(fNames) %TODO
+figure('Visible','off');
+
+for fIndex = cellID:cellID%length(fNames) %TODO
     
     fName = fNamesPYR(fIndex);
     load(string(fName));
@@ -66,13 +70,15 @@ for fIndex = 1:9%length(fNames) %TODO
         spikes = sTraceSerie.trace(traceNum).spikePeakIndexes;
         % Note: use original raw traces instead of filtered traces
 
-        if dataSource == "cellBody"
+        if dataSource == "cellBody" %TODO: not using these -- we are removing spikes
             data = sTraceSerie.trace(traceNum).trace;
             % Matlab bandpass (bpm) filter with spike retained
-            gamma_bpm_spike = bandpass(data, [lfreq hfreq], sampleRate);
+            %gamma_bpm_spike = bandpass(data, [lfreq hfreq], sampleRate);
+            %[gamma_bpm_spike, ~] = MyBandPassFilter(data, 7, lfreq, hfreq);
         elseif dataSource == "LFP"
             data = sTraceSerie.trace(traceNum).LFPTrace;
-            gamma_bpm_lfp = bandpass(data, [lfreq hfreq], sampleRate);
+            %gamma_bpm_lfp = bandpass(data, [lfreq hfreq], sampleRate);
+            %[gamma_bpm_lfp, ~] = MyBandPassFilter(data, 7, lfreq, hfreq);
         end
         
         spikeCount = 0;
@@ -82,7 +88,8 @@ for fIndex = 1:9%length(fNames) %TODO
             if dataSource == "cellBody"
                 data_rmSpike = RemoveSpike(data,sTraceSerie.trace(traceNum).spikePeakIndexes,sampleRate*[-0.0001,0.003],0);
                 % Matlab bandpass filter with spike removed    
-                gamma_bpm_rmSpike = bandpass(data_rmSpike, [lfreq hfreq], sampleRate);                 
+                %gamma_bpm_rmSpike = bandpass(data_rmSpike, [lfreq hfreq], sampleRate); 
+                [gamma_bpm_rmSpike, ~] = MyBandPassFilter(data_rmSpike, 7, lfreq, hfreq);
             elseif dataSource == "LFP"
                 interval=sTraceSerie.LFPStat.correctionInterval;
                 data_rmSpike = RemoveSpike(data,sTraceSerie.trace(traceNum).spikePeakIndexes,sampleRate*interval,0);
@@ -133,7 +140,7 @@ for fIndex = 1:9%length(fNames) %TODO
                     end
                 end
 
-                %  only use spike that are in the first quater of gamma
+                %  TODO:only use spike that are in the first quater of gamma
                 %  phase?
                 if spikeStartDiff >= 0 && spikeStartDiff <= phaseLimit
                     spikeMidDiff = (oneSide+1 - midP); 
@@ -176,59 +183,5 @@ for fIndex = 1:9%length(fNames) %TODO
 end % end for each file
 
 
-% polar plot first spike gamma delay(min-spike) and stimulus angle
-% figure
-% [orient_sorted, orient_order] = sort(stim_orient);
-% delay = spikeStartDiffAll(orient_order);
-% orient_sorted = degtorad(orient_sorted);
-% polarscatter(orient_sorted, delay)
-% hold
-% 
-% unique_ori = [orient_sorted(1)];
-% avg_delay = [];
-% temp_delay = [delay(1)];
-% 
-% for i = 2:length(orient_sorted)
-%    if orient_sorted(i) ~= orient_sorted(i-1)
-%        avg_delay = [avg_delay, mean(temp_delay)];
-%        unique_ori = [unique_ori, orient_sorted(i)];
-%        temp_delay = [];
-%    end
-%    temp_delay = [temp_delay, delay(i)];
-%    if i == length(orient_sorted)
-%        avg_delay = [avg_delay, mean(temp_delay)];
-%    end
-% end
-% unique_ori = [unique_ori, degtorad(360)];
-% avg_delay = [avg_delay, avg_delay(1)];
-% polarplot(unique_ori, avg_delay)
 
-%saveFileName = strcat('avgDelayAfterStimOnset/',string(fName),'.png')
-%saveas(gcf,saveFileName)
-
-% figure
-% orient_all = sTraceSerie.global.stimStruct.StimMatrix;
-% [orient_sorted, orient_order] = sort(orient_all);
-% rate = spikeCountAll(orient_order);
-% orient_sorted = degtorad(orient_sorted);
-% polarscatter(orient_sorted, rate)
-% hold
-% unique_ori = [orient_sorted(1)];
-% avg_rate = [];
-% temp_rate = [rate(1)];
-% 
-% for i = 2:length(orient_sorted)
-%    if orient_sorted(i) ~= orient_sorted(i-1)
-%        avg_rate = [avg_rate, mean(temp_rate)];
-%        unique_ori = [unique_ori, orient_sorted(i)];
-%        temp_rate = [];
-%    end
-%    temp_rate = [temp_rate, rate(i)];
-%    if i == length(orient_sorted)
-%        avg_rate = [avg_rate, mean(temp_rate)];
-%    end
-% end
-% unique_ori = [unique_ori, degtorad(360)];
-% avg_rate = [avg_rate, avg_rate(1)];
-% polarplot(unique_ori, avg_rate)
 
